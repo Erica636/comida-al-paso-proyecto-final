@@ -14,23 +14,26 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-change-this-in-production'
 # Environment
 ENV = os.getenv('ENV', 'development').lower()
 
-# SECURITY WARNING: don't run with debug turned on in production!
-# Acepta valores: "True", "true", "1", "yes"
+# DEBUG acepta: "True", "true", "1", "yes"
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-# ALLOWED_HOSTS: lee la variable ALLOWED_HOSTS (coma separada) y limpia espacios
+# ALLOWED_HOSTS desde variable de entorno
 _raw_allowed = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0')
 ALLOWED_HOSTS = [h.strip() for h in _raw_allowed.split(',') if h.strip()]
 
-# Si se configuró RAILWAY_HOST (u otra variable) la agregamos automáticamente
-# Útil si Railway te da la URL y la pones en esa variable
-railway_host = os.getenv('RAILWAY_HOST') or os.getenv('RAILWAY_APP_HOST') or os.getenv('HOSTNAME')
+# Railway: agregar host automáticamente si existe
+railway_host = (
+    os.getenv('RAILWAY_HOST') or
+    os.getenv('RAILWAY_APP_HOST') or
+    os.getenv('HOSTNAME')
+)
+
 if railway_host:
     railway_host = railway_host.strip()
-    if railway_host and railway_host not in ALLOWED_HOSTS:
+    if railway_host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(railway_host)
 
-# Application definition
+# Apps instaladas
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -38,16 +41,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    
+
     # Local apps
     'api',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise para archivos estáticos
@@ -80,11 +84,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'comida_al_paso.wsgi.application'
 
-# Database - Detectar automáticamente si es MySQL o SQLite
+# ---------------------------
+# BASE DE DATOS
+# ---------------------------
+
 DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.sqlite3')
 
 if 'mysql' in DB_ENGINE.lower():
-    # Configuración para MySQL (Railway)
+    # Base de datos Railway MySQL
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -99,7 +106,7 @@ if 'mysql' in DB_ENGINE.lower():
         }
     }
 else:
-    # Configuración para SQLite (desarrollo local)
+    # Base SQLite local
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -107,5 +114,72 @@ else:
         }
     }
 
-# Password validation
-AUTH_PASSWORD_VALIDAT
+# ---------------------------
+# Validación de contraseñas
+# ---------------------------
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+# ---------------------------
+# Internacionalización
+# ---------------------------
+
+LANGUAGE_CODE = 'es-ar'
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
+USE_I18N = True
+USE_TZ = True
+
+# ---------------------------
+# Archivos estáticos
+# ---------------------------
+
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# ---------------------------
+# MEDIA (si se usa)
+# ---------------------------
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ---------------------------
+# CORS
+# ---------------------------
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+# ---------------------------
+# REST FRAMEWORK + JWT
+# ---------------------------
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+# ---------------------------
+# Auto primary key
+# ---------------------------
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
