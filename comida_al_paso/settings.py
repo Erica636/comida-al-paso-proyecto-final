@@ -17,21 +17,8 @@ ENV = os.getenv('ENV', 'development').lower()
 # DEBUG acepta: "True", "true", "1", "yes"
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-# ALLOWED_HOSTS desde variable de entorno
-_raw_allowed = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0')
-ALLOWED_HOSTS = [h.strip() for h in _raw_allowed.split(',') if h.strip()]
-
-# Railway: agregar host automáticamente si existe
-railway_host = (
-    os.getenv('RAILWAY_HOST') or
-    os.getenv('RAILWAY_APP_HOST') or
-    os.getenv('HOSTNAME')
-)
-
-if railway_host:
-    railway_host = railway_host.strip()
-    if railway_host not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(railway_host)
+# ALLOWED_HOSTS - Permitir todos temporalmente
+ALLOWED_HOSTS = ['*']
 
 # Apps instaladas
 INSTALLED_APPS = [
@@ -183,3 +170,44 @@ SIMPLE_JWT = {
 # ---------------------------
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ---------------------------
+# LOGGING
+# ---------------------------
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} - {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'api': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
+
+# ---------------------------
+# SEGURIDAD EN PRODUCCIÓN
+# ---------------------------
+
+if 'prod' in ENV:
+    SECURE_SSL_REDIRECT = False  # Railway usa proxy
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
