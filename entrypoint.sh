@@ -19,7 +19,7 @@ python manage.py load_menu_data || echo "Datos ya cargados o comando no disponib
 echo "Aplicación preparada exitosamente"
 
 # Determinar modo de ejecución según ENV
-if [ "$ENV" = "production" ]; then
+if [[ "$ENV" == *"prod"* ]]; then
     echo "Iniciando en modo PRODUCCIÓN con GUNICORN..."
     exec gunicorn comida_al_paso.wsgi:application \
         --bind 0.0.0.0:8000 \
