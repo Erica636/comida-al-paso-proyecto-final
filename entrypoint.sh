@@ -18,16 +18,11 @@ python manage.py load_menu_data || echo "Datos ya cargados o comando no disponib
 
 echo "Aplicación preparada exitosamente"
 
-# Determinar modo de ejecución según ENV
-if [[ "$ENV" == *"prod"* ]]; then
-    echo "Iniciando en modo PRODUCCIÓN con GUNICORN..."
-    exec gunicorn comida_al_paso.wsgi:application \
-        --bind 0.0.0.0:8000 \
-        --workers 3 \
-        --timeout 120 \
-        --access-logfile - \
-        --error-logfile -
-else
-    echo "Iniciando en modo DESARROLLO con runserver..."
-    exec python manage.py runserver 0.0.0.0:8000
-fi
+# Siempre usar gunicorn en Railway
+echo "Iniciando en modo PRODUCCIÓN con GUNICORN..."
+exec gunicorn comida_al_paso.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers 3 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile -
