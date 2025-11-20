@@ -58,7 +58,7 @@ def test_api(request):
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         logger.info(f"Intento de crear categoría por usuario: {request.user}")
@@ -92,6 +92,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
 def productos_list(request):
     """Listar todos los productos o crear uno nuevo"""
 
