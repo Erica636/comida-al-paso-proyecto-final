@@ -43,7 +43,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # WhiteNoise para archivos estáticos
     
-    # 🚨 SOLUCIÓN: CORS debe ir muy arriba, antes de Session, Auth y Common Middleware 🚨
+    # 🚨 SOLUCIÓN 1: CORS debe ir aquí, antes de Session, Auth y Common Middleware
     'corsheaders.middleware.CorsMiddleware', 
     
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -154,8 +154,6 @@ CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
 if not CORS_ALLOWED_ORIGINS or CORS_ALLOWED_ORIGINS == ['']:
     CORS_ALLOW_ALL_ORIGINS = True
     
-# Importante: Como estás usando JWT y tienes un frontend en Vercel,
-# añade el origen de Vercel a CSRF_TRUSTED_ORIGINS para evitar posibles problemas futuros.
 CSRF_TRUSTED_ORIGINS = [
     'https://comida-al-paso-frontend-sh2b.vercel.app',
 ]
@@ -165,11 +163,18 @@ CSRF_TRUSTED_ORIGINS = [
 # ---------------------------
 
 REST_FRAMEWORK = {
+    # 🚨 SOLUCIÓN 2: Clase de Autenticación
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # SessionAuth permite que las peticiones no autenticadas sean manejadas por el permiso.
+        'rest_framework.authentication.SessionAuthentication', 
     ),
-    # Como la vista 'productos_list' debe ser pública, NO definiremos 'DEFAULT_PERMISSION_CLASSES'
-    # globalmente aquí. Esto evita que el 401 se propague a vistas no protegidas.
+    
+    # 🚨 SOLUCIÓN 2: Permisos por defecto
+    # Permite que las vistas sin decoración específica sean públicas.
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+    )
 }
 
 SIMPLE_JWT = {
