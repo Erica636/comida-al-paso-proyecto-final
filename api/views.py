@@ -82,7 +82,6 @@ class CategoriaViewSet(viewsets.ModelViewSet):
             )
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticatedOrReadOnly])
 def productos_list(request):
     """Listar todos los productos o crear uno nuevo"""
     
