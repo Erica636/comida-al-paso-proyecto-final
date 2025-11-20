@@ -1,19 +1,25 @@
 import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 from .models import Categoria, Producto
 from .serializers import (
-    CategoriaSerializer, 
+    CategoriaSerializer,
     ProductoSerializer,
-    ProductoCreateSerializer
+    ProductoCreateSerializer,
 )
 
 # Configurar logger
 logger = logging.getLogger('api')
 
+
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def api_home(request):
     """Página de inicio de la API"""
     logger.info("Acceso a la página de inicio de la API")
@@ -34,7 +40,9 @@ def api_home(request):
         'documentacion': 'Envía requests a los endpoints para interactuar con el inventario'
     })
 
+
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def test_api(request):
     """Endpoint de prueba"""
     logger.info("Test de API ejecutado")
@@ -45,6 +53,7 @@ def test_api(request):
         'total_categorias': total_categorias,
         'total_productos': total_productos
     })
+
 
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
@@ -59,7 +68,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
         if not nombre:
             logger.warning("Intento de crear categoría sin nombre")
             return Response(
-                {'error': 'Nombre es requerido'}, 
+                {'error': 'Nombre es requerido'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -77,21 +86,30 @@ class CategoriaViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Error al crear categoría: {str(e)}")
             return Response(
-                {'error': str(e)}, 
+                {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 @api_view(['GET', 'POST'])
 def productos_list(request):
     """Listar todos los productos o crear uno nuevo"""
-    
+
+    # GET → abierto al público
     if request.method == 'GET':
         logger.info("Listado de productos solicitado")
         productos = Producto.objects.all()
         serializer = ProductoSerializer(productos, many=True)
         return Response(serializer.data)
 
-    elif request.method == 'POST':
+    # POST → requiere estar logueado
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            return Response(
+                {"error": "Autenticación requerida para crear productos"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         logger.info(f"Intento de crear producto por usuario: {request.user}")
         create_serializer = ProductoCreateSerializer(data=request.data)
 
@@ -105,7 +123,7 @@ def productos_list(request):
         try:
             producto = create_serializer.save()
             logger.info(f"Producto creado exitosamente: {producto.nombre}")
-            
+
             return Response({
                 'mensaje': 'Producto creado exitosamente',
                 'producto': {
@@ -122,16 +140,18 @@ def productos_list(request):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def productos_por_categoria(request, categoria_nombre):
     """Obtener productos de una categoría específica"""
     logger.info(f"Búsqueda de productos por categoría: {categoria_nombre}")
     productos = Producto.objects.filter(
         categoria__nombre__iexact=categoria_nombre
     )
-    
+
     if not productos.exists():
         logger.warning(f"No se encontraron productos para la categoría: {categoria_nombre}")
-    
+
     serializer = ProductoSerializer(productos, many=True)
     return Response(serializer.data)
